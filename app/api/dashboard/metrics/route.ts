@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
 
     const { data: sends, error } = await supabase
       .from('sends')
-      .select('status, opened, clicked, created_at')
+      .select('status, opened, clicked, complaint, created_at')
       .gte('created_at', fromDate.toISOString())
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -47,4 +47,3 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
 }
-
