@@ -1,0 +1,118 @@
+You are building a complete SaaS platform for a bulk email sender tool called "ZoMail Pro" that integrates with Twilio SendGrid API for high-deliverability email sending. The platform must be secure, scalable, and compliant with Twilio's bulk email guidelines (e.g., authentication via SPF/DKIM/DMARC, one-click unsubscribes, low complaint rates, and no spammy content). Focus on inbox delivery by enforcing best practices like list hygiene, personalization, and throttling.
+Tech Stack and Setup Guidelines
+
+Frontend/Backend: Next.js 14+ (App Router) with Node.js runtime. Use TypeScript for all code. Server Actions for API routes where possible.
+Database: Supabase (PostgreSQL) for storing users (admins only), email lists/subscribers, send history, and verification results. Use Supabase Auth for admin-only login (email/password). Set up environment variables for Supabase URL and Anon Key.
+API Integration: Twilio SendGrid for sending (use @sendgrid/mail library). Handle API keys securely via environment variables (SENDGRID_API_KEY). Auto-configure authentication in setup (guide admin to add SPF/DKIM records via a setup wizard).
+UI Library: Tailwind CSS for styling, Shadcn/UI for components (e.g., cards, forms, modals), and Lucide React for icons. Ensure responsive design (mobile-first).
+Other Libs:
+
+React Hook Form + Zod for forms/validation.
+Uploadthing or Next.js Image for image uploads.
+PapaParse for CSV contact list uploads.
+For email verification: Integrate a free tier API like Hunter.io (free: 50 verifications/month) or AbstractAPI (free: 100/month) via their SDKs. If no free AI-based option fits, fallback to a simple regex/syntax check + MX record lookup using dns Node module.
+
+
+Deployment: Structure for Vercel (use vercel.json for redirects/routing). Include a README.md with setup steps, env vars, and deployment guide.
+Security/Compliance:
+
+Admin-only access: No public user signups; hardcode single admin role.
+Rate limiting on sends (e.g., 1000/day initially, via Supabase row-level security).
+Twilio compliance: Auto-add unsubscribe links, track bounces/complaints via SendGrid webhooks (store in Supabase), suppress invalid emails. Enforce subject/body guidelines (no spam words, balanced text/image ratio).
+Environment vars: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SENDGRID_API_KEY, HUNTER_API_KEY (for verification).
+
+
+
+App Structure and Pages
+Use Next.js App Router. Create a clean, professional design with a blue/green color scheme (trustworthy for email tools). Include high-quality placeholder images (e.g., from Unsplash: email icons, dashboards, growth charts).
+
+
+Homepage (/): Marketing landing page (public, no login required).
+
+Hero section: Bold headline "Send Bulk Emails That Land in the Inbox – Effortlessly Scale Your Outreach with BulkMail Pro". Subheadline: "Powered by Twilio SendGrid for 99% deliverability. Compliant, secure, and admin-controlled."
+Features section: 4-6 cards with icons (e.g., "Seamless List Upload & Verification", "Real-Time Analytics Dashboard", "Image & Link Support", "Twilio-Compliant Sending").
+How-it-works: 3-step infographic (Upload List → Verify & Segment → Send & Track).
+Testimonials: 3 fake quotes with avatars.
+Pricing: Simple tier (Free Trial: 100 emails/mo; Pro: $29/mo unlimited – but stubbed, no Stripe yet).
+CTA: "Get Started" button → /admin/login.
+Footer: Links to About, Privacy, Terms; include your logo/image.
+SEO: Meta tags, OpenGraph images.
+
+
+
+Admin Login (/admin/login): Simple form (email/password). Use Supabase Auth. On success, redirect to /admin/dashboard. Error handling for invalid creds. "Back to Home" link.
+
+
+Admin Dashboard (/admin/dashboard): Protected route (use Supabase Auth middleware). Layout: Sidebar nav (Dashboard, Lists, Campaigns, Settings, Analytics). Top bar with logout and user avatar.
+
+Overview Section: Grid of 4 metric cards (Tailwind/Shadcn):
+
+Total Emails Added (from Supabase 'subscribers' table).
+Successful Sends (count from 'sends' table where status='delivered').
+Failed Sends (status='bounce' or 'dropped').
+Inbox Rate (calculated as successful / total * 100; display as % with trend arrow).
+Use Recharts for a simple line chart showing sends over last 7 days.
+
+
+Quick Actions: Buttons for "Upload New List", "Create Campaign", "Verify List".
+
+
+
+Twilio Setup (/admin/settings): Wizard modal/stepper on first login.
+
+Form to input SENDGRID_API_KEY (save encrypted in Supabase 'settings' table).
+Guide: Display steps for SPF/DKIM/DMARC setup (with copy-paste DNS records).
+Test button: Send a sample email to admin's address.
+Auto-reconnect: On app start, check key validity via SendGrid API ping.
+
+
+
+Contact Lists (/admin/lists): Table view of uploaded lists (Supabase 'lists' table: id, name, uploaded_at, total_count, valid_count).
+
+Upload form: Drag-drop CSV (columns: email, name, custom fields). Parse with PapaParse, insert to temp table.
+"Convert to Subscribers" button: Move valid emails to 'subscribers' table (add opt-in timestamp).
+Verification integration:
+
+Button: "Verify List" → Call Hunter/AbstractAPI (batch verify up to free limit; for larger, queue via Supabase Edge Functions).
+On complete: Update table with status (valid/invalid/risky). Filter UI to show only valid. Download cleaned CSV.
+Fallback verifier: If API fails/limits hit, use Node dns.resolveMx for domain checks + regex for syntax.
+
+
+
+
+
+Campaign Builder (/admin/campaigns): Form for new sends.
+
+Select list (dropdown of verified subscribers).
+Subject field (input, validate <100 chars, no spam words via Zod schema).
+Message editor: Rich text (use React-Quill or Tiptap) for HTML body. Support:
+
+Image upload: Integrate Uploadthing to S3/Supabase Storage; embed as <img src=...>.
+Links: Auto-wrap in  tags; add rel="nofollow" for compliance.
+Personalization: Merge tags like {{first_name}} – replace via SendGrid dynamic templates.
+
+Also the Senders name should be costumizable 
+
+Preview pane: Render email in iframe (mobile/desktop views).
+Send button: Queue via Server Action → SendGrid API (batch send with throttling: 10/sec). Track via webhooks (setup endpoint /api/webhooks/sendgrid to update Supabase 'sends' table: id, email, status, timestamp).
+Compliance: Auto-append footer with unsubscribe link (generate unique per campaign via SendGrid). Warn if >3 links or high image ratio.
+
+
+
+Analytics (/admin/analytics): Expandable section in dashboard.
+
+Tables/charts: Send history, bounce reasons, open/click rates (pull from SendGrid events via API).
+Export: CSV download of metrics.
+
+
+
+Implementation Steps
+
+Project Init: Generate boilerplate with npx create-next-app@latest bulkmail-pro --typescript --tailwind --app. Add deps: @supabase/supabase-js, @sendgrid/mail, papa-parse, react-hook-form, zod, uploadthing, @uploadthing/react, recharts, lucide-react, shadcn-ui (init with CLI).
+Supabase Setup: Create tables (users, lists, subscribers, sends, settings). Enable Auth. Row-Level Security: Only authenticated admins.
+Auth Middleware: Protect /admin/* routes.
+Build Incrementally: Start with homepage → login → dashboard skeleton → integrations (Twilio, verification) → forms → analytics.
+Testing: Add sample data script. Test sends with your email. Ensure no console errors.
+Edge Cases: Handle API rate limits, upload size (5MB max), invalid CSVs, webhook failures (retry queue).
+Optimization: Use Next.js Image for perf, Server-Side Rendering for public pages, ISR for dashboard if needed.
+Final Output: Provide full folder structure, all code files (pages, components, utils, lib), env.example, and a deployment script for Vercel. Include comments for clarity.

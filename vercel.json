@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/webhooks/sendgrid",
+      "destination": "/api/webhooks/sendgrid"
+    }
+  ]
+}

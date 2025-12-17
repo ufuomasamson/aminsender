@@ -1,0 +1,16 @@
+node_modules/
+.next/
+.vercel/
+coverage/
+dist/
+*.log
+.DS_Store
+
+# Env files
+.env
+.env.*
+.env.local
+
+# OS/Editor junk
+.idea/
+.vscode/
