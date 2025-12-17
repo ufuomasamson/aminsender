@@ -37,6 +37,20 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSaveDefaultSender = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const supabase = createSupabaseClient();
+      const { error } = await supabase
+        .from('settings')
+        .upsert({ key: 'sender_email', value: defaultSenderEmail });
+      if (error) throw new Error(error.message);
+      alert('Default sender email saved');
+    } catch (err: any) {
+      alert(err.message || 'Failed to save sender email');
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -206,16 +220,3 @@ export default function SettingsPage() {
     </AdminLayout>
   );
 }
-  const handleSaveDefaultSender = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const supabase = createSupabaseClient();
-      const { error } = await supabase
-        .from('settings')
-        .upsert({ key: 'sender_email', value: defaultSenderEmail });
-      if (error) throw new Error(error.message);
-      alert('Default sender email saved');
-    } catch (err: any) {
-      alert(err.message || 'Failed to save sender email');
-    }
-  };
