@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Shield, CheckCircle, Users, ArrowRight, BarChart3, Send, FileCheck, Mail } from 'lucide-react';
+import { Shield, CheckCircle, Users, ArrowRight, BarChart3, Send, FileCheck, Mail, Star } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';
 export const metadata = {
   title: 'AminSender – Reliable Bulk Email via AWS SES',
