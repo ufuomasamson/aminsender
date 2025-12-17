@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey)
+export const runtime = 'nodejs'
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,6 +19,13 @@ export async function POST(request: NextRequest) {
     if (!type) {
       return NextResponse.json({ error: 'Unknown SES event' }, { status: 400 })
     }
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!supabaseUrl || !supabaseKey) {
+      return NextResponse.json({ success: true })
+    }
+    const supabase = createClient(supabaseUrl, supabaseKey)
 
     if (type === 'Delivery') {
       const mail = event.mail
@@ -64,4 +69,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 })
   }
 }
-
